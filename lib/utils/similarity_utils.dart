@@ -1,4 +1,3 @@
-
 import 'package:string_similarity/string_similarity.dart';
 
 class SimilarityUtils {

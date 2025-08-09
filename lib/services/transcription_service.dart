@@ -16,10 +16,9 @@ class TranscriptionService {
   static Future<String> uploadAndTranscribe(String filePath) async {
     final file = File(filePath);
 
-    // رفع الملف
     final uploadRes = await dio.post(
       'https://api.assemblyai.com/v2/upload',
-      data: file.openRead(), // هنا بنستخدم Stream عادي
+      data: file.openRead(),
       options: Options(
         headers: {
           'transfer-encoding': 'chunked',
@@ -30,7 +29,6 @@ class TranscriptionService {
 
     final uploadUrl = uploadRes.data['upload_url'];
 
-    // إرسال رابط الصوت لبدء التفريغ
     final transcriptRes = await dio.post(
       'https://api.assemblyai.com/v2/transcript',
       data: jsonEncode({'audio_url': uploadUrl , 'language_code': 'ar'}),
@@ -43,7 +41,6 @@ class TranscriptionService {
 
     final transcriptId = transcriptRes.data['id'];
 
-    // polling لمتابعة حالة التفريغ
     while (true) {
       final pollingRes = await dio.get(
         'https://api.assemblyai.com/v2/transcript/$transcriptId',

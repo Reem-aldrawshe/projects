@@ -1,32 +1,49 @@
 import '../models/hadith.dart';
 import '../models/transcription_result.dart';
-import '../services/audio_service.dart';
-import '../services/transcription_service.dart';
+import '../services/recording_service.dart';
+import '../services/playback_service.dart';
+import '../services/transcription_service.dart'; 
 import '../utils/similarity_utils.dart';
 
 class HadithPresenter {
-  final AudioService _audioService = AudioService();
+  final RecordingService _recordingService = RecordingService();
+  final PlaybackService _playbackService = PlaybackService();
 
   Future<void> playHadith(Hadith hadith) async {
-    await _audioService.play(hadith.audioAssetPath);
+    await _playbackService.playAsset(hadith.audioAssetPath);
   }
 
-  Future<void> stopAudio() async {
-    await _audioService.stop();
+  Future<void> stopPlayback() async {
+    await _playbackService.stop();
   }
 
-  Future<TranscriptionResult> handleTranscription(
+  Future<String?> startRecording({String? fileName}) {
+    return _recordingService.startRecording(fileName: fileName);
+  }
+
+  Future<String?> stopRecording() {
+    return _recordingService.stopRecording();
+  }
+
+  Future<void> playRecorded(String path) async {
+    await _playbackService.playFile(path);
+  }
+
+  Future<void> stopRecordedPlayback() async {
+    await _playbackService.stop();
+  }
+
+  /// يرفع الملف لِ AssemblyAI عبر TranscriptionService (اللي عندك)
+  Future<TranscriptionResult> transcribeRecording(
     String filePath,
     String originalText,
   ) async {
-    final transcribed = await TranscriptionService.uploadAndTranscribe(filePath);
-    final score = SimilarityUtils.calculateSimilarity(originalText, transcribed);
-    return TranscriptionResult(text: transcribed, similarity: score);
+    final text = await TranscriptionService.uploadAndTranscribe(filePath);
+    final score = SimilarityUtils.calculateSimilarity(originalText, text);
+    return TranscriptionResult(text: text, similarity: score);
   }
 
-
   double calculateSimilarity(String original, String spoken) {
-  return SimilarityUtils.calculateSimilarity(original, spoken);
-}
-
+    return SimilarityUtils.calculateSimilarity(original, spoken);
+  }
 }

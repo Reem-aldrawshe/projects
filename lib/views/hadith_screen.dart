@@ -1,205 +1,140 @@
-// import 'package:flutter/material.dart';
-// import '../models/hadith.dart';
-// import '../presenters/hadith_presenter.dart';
-// import 'audio_dialog.dart';
-// import 'transcription_box.dart';
-
-// class HadithScreen extends StatefulWidget {
-//   const HadithScreen({super.key});
-
-//   @override
-//   State<HadithScreen> createState() => _HadithScreenState();
-// }
-
-// class _HadithScreenState extends State<HadithScreen> {
-//   final presenter = HadithPresenter();
-//   final hadith = Hadith(
-//     id: '1',
-//     title: 'عن أمير المؤمنين أبي حفص عمر بن الخطاب',
-//     audioAssetPath: 'assets/audio/hadith1.mp3',
-//     originalText: 'قال: سمعتُ رسولَ اللهِ ﷺ يقولُ: "إنَّما الأعمالُ بالنِّيَّات، وإنَّما لامرئٍ ما نوى، فمَن كانت هجرتُه إلى اللهِ ورسولِه، فهجرتُه إلى اللهِ ورسولِه، ومَن كانت هجرتُه لدُنيا يُصيبُها، أوِ امرأةٍ يَنكِحُها، فهجرتُه إلى ما هاجرَ إليه".',
-//   );
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       backgroundColor: const Color(0xFFEFF1F3),
-//       appBar: AppBar(
-//         backgroundColor: const Color(0xFF009CA6),
-//         elevation: 0,
-//         title: const Text('حديث النيات'),
-//         centerTitle: true,
-//         actions: [
-//           Padding(
-//             padding: const EdgeInsets.only(right: 12.0),
-//             child: CircleAvatar(
-//               backgroundColor: Colors.white,
-//               child: Icon(Icons.person, color: Colors.teal[700]),
-//             ),
-//           )
-//         ],
-//       ),
-//       body: Column(
-//         children: [
-//           const SizedBox(height: 12),
-//           Padding(
-//             padding: const EdgeInsets.symmetric(horizontal: 16),
-//             child: ElevatedButton.icon(
-//               style: ElevatedButton.styleFrom(
-//                 backgroundColor: const Color(0xFFEFEFEF),
-//                 foregroundColor: Colors.black87,
-//                 elevation: 0,
-//                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-//               ),
-//               onPressed: () {
-//                 showDialog(
-//                   context: context,
-//                   builder: (_) => AudioDialog(
-//                     onListen: () async => await presenter.playHadith(hadith),
-//                   ),
-//                 );
-//               },
-//               icon: const Icon(Icons.volume_up, color: Color(0xFF009CA6)),
-//               label: const Text(
-//                 'استمع للحديث النبوي !',
-//                 style: TextStyle(fontWeight: FontWeight.w600),
-//               ),
-//             ),
-//           ),
-//           const SizedBox(height: 12),
-//           Padding(
-//             padding: const EdgeInsets.symmetric(horizontal: 16),
-//             child: Container(
-//               width: double.infinity,
-//               padding: const EdgeInsets.all(16),
-//               decoration: BoxDecoration(
-//                 color: const Color(0xFFE8F6F8),
-//                 borderRadius: BorderRadius.circular(16),
-//               ),
-//               child: Text(
-//                 hadith.title,
-//                 style: const TextStyle(
-//                   fontWeight: FontWeight.w600,
-//                   fontSize: 16,
-//                   color: Color(0xFF009688),
-//                 ),
-//               ),
-//             ),
-//           ),
-//           const SizedBox(height: 12),
-//           Expanded(
-//             child: TranscriptionBox(
-//               hadith: hadith,
-//               presenter: presenter,
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
-
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:audioplayers/audioplayers.dart';
+import 'package:just_audio/just_audio.dart';
 import '../models/hadith.dart';
 import '../presenters/hadith_presenter.dart';
-import 'audio_dialog.dart';
-import 'transcription_box.dart';
-import 'bottom_nav_bar.dart';
+import '../services/recording_service.dart';
+import '../services/playback_service.dart';
+import '../widgets/transcription_box.dart';
+import '../widgets/bottom_nav_bar.dart';
+import '../models/transcription_result.dart';
 
 class HadithScreen extends StatefulWidget {
-  const HadithScreen({super.key});
+  const HadithScreen({Key? key}) : super(key: key);
 
   @override
   State<HadithScreen> createState() => _HadithScreenState();
 }
 
 class _HadithScreenState extends State<HadithScreen> {
-  final presenter = HadithPresenter();
   final hadith = Hadith(
     id: '1',
     title: 'عن أمير المؤمنين أبي حفص عمر بن الخطاب',
-    audioAssetPath: 'assets/audio/hadith1.mp3',
-    originalText: 'قال: سمعتُ رسولَ اللهِ ﷺ يقولُ: "إنَّما الأعمالُ بالنِّيَّات، وإنَّما لامرئٍ ما نوى، فمَن كانت هجرتُه إلى اللهِ ورسولِه، فهجرتُه إلى اللهِ ورسولِه، ومَن كانت هجرتُه لدُنيا يُصيبُها، أوِ امرأةٍ يَنكِحُها، فهجرتُه إلى ما هاجرَ إليه".',
+    audioAssetPath: 'audio/hadith1.mp3', 
+    originalText:
+        'قال: سمعتُ رسولَ اللهِ ﷺ يقولُ: "إنَّما الأعمالُ بالنِّيَّات، وإنَّما لامرئٍ ما نوى، فمَن كانت هجرتُه إلى اللهِ ورسولِه، فهجرتُه إلى اللهِ ورسولِه، ومَن كانت هجرتُه لدُنيا يُصيبُها، أوِ امرأةٍ يَنكِحُها، فهجرتُه إلى ما هاجرَ إليه".',
   );
 
-  late AudioPlayer _audioPlayer;
-  bool _isPlaying = false;
+  final presenter = HadithPresenter();
+  final recordingService = RecordingService();
+  final playbackService = PlaybackService();
+
+  final TextEditingController _controller = TextEditingController();
+
   bool _isRecording = false;
-  double _playbackPosition = 0;
-  double _playbackDuration = 100;
-  String _transcribedText = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _audioPlayer = AudioPlayer();
-    _audioPlayer.onPlayerStateChanged.listen((state) {
-      if (state == PlayerState.completed) {
-        setState(() {
-          _isPlaying = false;
-          _playbackPosition = 0;
-        });
-      }
-    });
-
-    _audioPlayer.onDurationChanged.listen((duration) {
-      setState(() {
-        _playbackDuration = duration.inMilliseconds.toDouble();
-      });
-    });
-
-    _audioPlayer.onPositionChanged.listen((position) {
-      setState(() {
-        _playbackPosition = position.inMilliseconds.toDouble();
-      });
-    });
-  }
+  bool _isPlayingRecorded = false;
+  String? _recordedPath;
+  double? _lastScore;
 
   @override
   void dispose() {
-    _audioPlayer.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
-  Future<void> _playHadith() async {
-    setState(() {
-      _isPlaying = true;
-    });
-    await _audioPlayer.play(AssetSource(hadith.audioAssetPath));
+  Future<void> _onPlayHadith() async {
+    await presenter.playHadith(hadith);
   }
 
-  Future<void> _stopHadith() async {
-    await _audioPlayer.stop();
-    setState(() {
-      _isPlaying = false;
-      _playbackPosition = 0;
-    });
+
+Future<void> _onPlayRecorded() async {
+  if (_recordedPath == null || !File(_recordedPath!).existsSync()) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('لا يوجد تسجيل للاستماع إليه')),
+    );
+    return;
   }
 
-  void _startRecording() {
+  if (_isPlayingRecorded) {
+    await playbackService.stop();
     setState(() {
-      _isRecording = true;
+      _isPlayingRecorded = false;
+    });
+  } else {
+    await playbackService.playFile(_recordedPath!);
+    setState(() {
+      _isPlayingRecorded = true;
     });
   }
+}
 
-  void _stopRecording() {
+Future<void> _onRecordToggle() async {
+  if (_isRecording) {
+    final path = await recordingService.stopRecording();
     setState(() {
       _isRecording = false;
+      _recordedPath = path;
     });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('تم إيقاف التسجيل وحفظ الملف')),
+    );
+  } else {
+    final startedPath = await recordingService.startRecording();
+    if (startedPath == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يرجى منح صلاحية الميكروفون')),
+      );
+      return;
+    }
+    setState(() {
+      _isRecording = true;
+      _recordedPath = startedPath;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('بدأ التسجيل')),
+    );
+  }
+}
+
+
+  Future<void> _onSave() async {
+    if (_recordedPath == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('لا يوجد تسجيل لحفظه')));
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final TranscriptionResult result = await presenter.transcribeRecording(_recordedPath!, hadith.originalText);
+      _controller.text = result.text;
+      _lastScore = result.similarity;
+      Navigator.of(context).pop(); 
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم التفريغ وعرض النص')));
+    } catch (e) {
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ أثناء التفريغ: $e')));
+    }
   }
 
-  void _showResultDialog() {
+  void _onShowResult() {
+    final edited = _controller.text;
+    final score = presenter.calculateSimilarity(hadith.originalText, edited);
+    setState(() {
+      _lastScore = score;
+    });
+
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('نتيجة التسميع'),
-        content: const Text('نسبة التطابق: 95%'),
+        content: Text('نسبة التطابق: ${(score * 100).toStringAsFixed(2)}%'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('إغلاق'),
-          ),
+          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('إغلاق')),
         ],
       ),
     );
@@ -219,10 +154,7 @@ class _HadithScreenState extends State<HadithScreen> {
             padding: const EdgeInsets.only(right: 12.0),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-              ),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
               child: Row(
                 children: [
                   Text('150', style: TextStyle(color: Colors.teal[700], fontWeight: FontWeight.bold)),
@@ -234,11 +166,8 @@ class _HadithScreenState extends State<HadithScreen> {
           ),
           Padding(
             padding: const EdgeInsets.only(right: 12.0),
-            child: CircleAvatar(
-              backgroundColor: Colors.white,
-              child: Icon(Icons.person, color: Colors.teal[700]),
-            ),
-          )
+            child: CircleAvatar(backgroundColor: Colors.white, child: Icon(Icons.person, color: Colors.teal[700])),
+          ),
         ],
       ),
       body: Column(
@@ -253,19 +182,9 @@ class _HadithScreenState extends State<HadithScreen> {
                 elevation: 0,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (_) => AudioDialog(
-                    onListen: _playHadith,
-                  ),
-                );
-              },
+              onPressed: _onPlayHadith,
               icon: const Icon(Icons.volume_up, color: Color(0xFF009CA6)),
-              label: const Text(
-                'استمع للحديث النبوي !',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
+              label: const Text('استمع للحديث النبوي !', style: TextStyle(fontWeight: FontWeight.w600)),
             ),
           ),
           const SizedBox(height: 12),
@@ -274,50 +193,48 @@ class _HadithScreenState extends State<HadithScreen> {
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE8F6F8),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Text(
-                hadith.title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                  color: Color(0xFF009688),
-                ),
-              ),
+              decoration: BoxDecoration(color: const Color(0xFFE8F6F8), borderRadius: BorderRadius.circular(16)),
+              child: Text(hadith.title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16, color: Color(0xFF009688))),
             ),
           ),
           const SizedBox(height: 12),
-          Expanded(
-            child: TranscriptionBox(
-              hadith: hadith,
-              presenter: presenter,
-              transcribedText: _transcribedText,
-            ),
-          ),
-          if (_isPlaying) ...[
+        Expanded(
+  child: EditableTranscriptionBox(
+    controller: _controller,
+    originalText: hadith.originalText,
+    onTextChanged: (newText) {
+      setState(() {
+        _lastScore = presenter.calculateSimilarity(hadith.originalText, newText);
+      });
+    },
+  ),
+),
+
+if (_lastScore != null)
+  Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+    child: Text(
+      'نسبة التطابق الحالية: ${(_lastScore! * 100).toStringAsFixed(2)}%',
+      style: const TextStyle(fontWeight: FontWeight.bold),
+    ),
+  ),
+
+
+          if (_lastScore != null)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Slider(
-                value: _playbackPosition,
-                min: 0,
-                max: _playbackDuration,
-                onChanged: (value) {},
-              ),
+              child: Text('نسبة التطابق الحالية: ${(_lastScore! * 100).toStringAsFixed(2)}%', style: const TextStyle(fontWeight: FontWeight.bold)),
             ),
-          ],
+          const SizedBox(height: 8),
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(12.0),
             child: ElevatedButton(
-              onPressed: _showResultDialog,
+              onPressed: _onShowResult,
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 50),
                 backgroundColor: const Color(0xFF009CA6),
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               child: const Text('عرض النتيجة', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             ),
@@ -325,14 +242,12 @@ class _HadithScreenState extends State<HadithScreen> {
         ],
       ),
       bottomNavigationBar: BottomNavBar(
-        onListen: _playHadith,
-        onStopListen: _stopHadith,
-        onStartRecording: _startRecording,
-        onStopRecording: _stopRecording,
-        onPlayRecorded: () {},
-        onSave: () {},
-        isPlaying: _isPlaying,
+        onPlayHadith: _onPlayHadith,
+        onRecordToggle: _onRecordToggle,
+        onPlayRecorded: _onPlayRecorded,
+        onSave: _onSave,
         isRecording: _isRecording,
+        isPlayingRecorded: _isPlayingRecorded,
       ),
     );
   }
