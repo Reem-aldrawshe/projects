@@ -1,24 +1,35 @@
-// lib/services/playback_service.dart
-import 'package:audioplayers/audioplayers.dart';
+import 'package:just_audio/just_audio.dart';
 
 class PlaybackService {
   final AudioPlayer _player = AudioPlayer();
+  Stream<Duration?> get durationStream => _player.durationStream;
+  Stream<Duration> get positionStream => _player.positionStream;
+  Stream<PlayerState> get playerStateStream => _player.playerStateStream;
 
-  Future<void> playAsset(String assetPath) async {
-    await _player.stop();
-    await _player.play(AssetSource(assetPath));
-  }
+ Future<void> playAsset(String assetPath) async {
+  await _player.stop();    
+  await _player.setAsset(assetPath);
+  await _player.play();
+}
 
-  Future<void> playFile(String filePath) async {
-    await _player.stop();
-    await _player.play(DeviceFileSource(filePath));
+Future<void> playFile(String filePath) async {
+  await _player.stop();   
+  await _player.setFilePath(filePath);
+  await _player.play();
+}
+
+
+  Future<void> pause() async {
+    await _player.pause();
   }
 
   Future<void> stop() async {
     await _player.stop();
   }
 
-  Stream<PlayerState> get onPlayerStateChanged => _player.onPlayerStateChanged;
-  Stream<Duration?> get onDurationChanged => _player.onDurationChanged;
-  Stream<Duration> get onPositionChanged => _player.onPositionChanged;
+  Future<void> seek(Duration position) async {
+    await _player.seek(position);
+  }
+
+  bool get isPlaying => _player.playing;
 }

@@ -2,7 +2,7 @@ import '../models/hadith.dart';
 import '../models/transcription_result.dart';
 import '../services/recording_service.dart';
 import '../services/playback_service.dart';
-import '../services/transcription_service.dart'; 
+import '../services/transcription_service.dart';
 import '../utils/similarity_utils.dart';
 
 class HadithPresenter {
@@ -33,7 +33,6 @@ class HadithPresenter {
     await _playbackService.stop();
   }
 
-  /// يرفع الملف لِ AssemblyAI عبر TranscriptionService (اللي عندك)
   Future<TranscriptionResult> transcribeRecording(
     String filePath,
     String originalText,

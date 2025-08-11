@@ -77,25 +77,29 @@ class _EditableTranscriptionBoxState extends State<EditableTranscriptionBox> {
         ? widget.controller.text.trim().split(RegExp(r'\s+'))
         : [];
 
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-          color: Colors.white, borderRadius: BorderRadius.circular(12)),
-      constraints: BoxConstraints(minHeight: 120, maxHeight: 180),
-      child: SingleChildScrollView(
-        child: RichText(
-          textDirection: TextDirection.rtl,
-          text: TextSpan(
-            children: List.generate(words.length, (index) {
-              return TextSpan(
-                text: words[index] + (index == words.length - 1 ? '' : ' '),
-                style: const TextStyle(fontSize: 16, color: Colors.black),
-                recognizer: TapGestureRecognizer()
-                  ..onTap = () {
-                    _editWordDialog(index);
-                  },
-              );
-            }),
+    return SizedBox(
+      height: 150,
+      width: 330,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+            color: Colors.white, borderRadius: BorderRadius.circular(12)),
+        constraints: BoxConstraints(minHeight: 120, maxHeight: 180),
+        child: SingleChildScrollView(
+          child: RichText(
+            textDirection: TextDirection.rtl,
+            text: TextSpan(
+              children: List.generate(words.length, (index) {
+                return TextSpan(
+                  text: words[index] + (index == words.length - 1 ? '' : ' '),
+                  style: const TextStyle(fontSize: 18, color: Colors.black),
+                  recognizer: TapGestureRecognizer()
+                    ..onTap = () {
+                      _editWordDialog(index);
+                    },
+                );
+              }),
+            ),
           ),
         ),
       ),
